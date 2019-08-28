@@ -1,7 +1,13 @@
+var VRenderer = 'hoedown';
+
 // Use Marked to highlight code blocks in edit mode.
 marked.setOptions({
     highlight: function(code, lang) {
         if (lang) {
+            if (lang === 'wavedrom') {
+                lang = 'json';
+            }
+
             if (hljs.getLanguage(lang)) {
                 return hljs.highlight(lang, code, true).value;
             } else {
@@ -26,6 +32,8 @@ var updateHtml = function(html) {
 
     var codes = document.getElementsByTagName('code');
     mermaidIdx = 0;
+    flowchartIdx = 0;
+    wavedromIdx = 0;
     plantUMLIdx = 0;
     graphvizIdx = 0;
     for (var i = 0; i < codes.length; ++i) {
@@ -43,6 +51,13 @@ var updateHtml = function(html) {
                            || code.classList.contains('language-flow'))) {
                 // Flowchart code block.
                 if (renderFlowchartOne(code)) {
+                    // replaceChild() will decrease codes.length.
+                    --i;
+                    continue;
+                }
+            } else if (VEnableWavedrom && code.classList.contains('language-wavedrom')) {
+                // Wavedrom code block.
+                if (renderWavedromOne(code)) {
                     // replaceChild() will decrease codes.length.
                     --i;
                     continue;
@@ -78,6 +93,7 @@ var updateHtml = function(html) {
     }
 
     addClassToCodeBlock();
+    addCopyButtonToCodeBlock();
     renderCodeBlockLineNumber();
 
     // If you add new logics after handling MathJax, please pay attention to

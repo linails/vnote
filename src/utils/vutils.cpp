@@ -83,6 +83,7 @@ void VUtils::initAvailableLanguage()
 
     s_availableLanguages.append(QPair<QString, QString>("en_US", "English (US)"));
     s_availableLanguages.append(QPair<QString, QString>("zh_CN", "Chinese"));
+    s_availableLanguages.append(QPair<QString, QString>("ja_JP", "Japanese"));
 }
 
 QString VUtils::readFileFromDisk(const QString &filePath)
@@ -813,6 +814,12 @@ QString VUtils::generateHtmlTemplate(const QString &p_template,
         }
     }
 
+    if (g_config->getEnableWavedrom()) {
+        extraFile += "<script src=\"qrc" + VNote::c_wavedromThemeFile + "\"></script>\n" +
+                     "<script src=\"qrc" + VNote::c_wavedromJsFile + "\"></script>\n" +
+                     "<script>var VEnableWavedrom = true;</script>\n";
+    }
+
     int plantUMLMode = g_config->getPlantUMLMode();
     if (plantUMLMode != PlantUMLMode::DisablePlantUML) {
         if (plantUMLMode == PlantUMLMode::OnlinePlantUML) {
@@ -848,6 +855,10 @@ QString VUtils::generateHtmlTemplate(const QString &p_template,
 
     if (g_config->getEnableFlashAnchor()) {
         extraFile += "<script>var VEnableFlashAnchor = true;</script>\n";
+    }
+
+    if (g_config->getEnableCodeBlockCopyButton()) {
+        extraFile += "<script>var VEnableCodeBlockCopyButton = true;</script>\n";
     }
 
     if (p_addToc) {
@@ -936,6 +947,27 @@ with 2em, if there are Chinese characters in it, the font will be a mess.
         extra += QString("<script type=\"text/javascript\">\n%1\n</script>\n").arg(js);
     }
 
+    // Clipboard.js.
+    if (g_config->getEnableCodeBlockCopyButton()) {
+        const QString clipboardjs(":/utils/clipboard.js/clipboard.min.js");
+        QString js = VUtils::readFileFromDisk(clipboardjs);
+        extra += QString("<script type=\"text/javascript\">\n%1\n</script>\n").arg(js);
+        extra += "<script type=\"text/javascript\">"
+                     "window.addEventListener('load', function() {"
+                         "new ClipboardJS('.vnote-copy-clipboard-btn', {"
+                            "text: function(trigger) {"
+                                "var t = trigger.getAttribute('source-text');"
+                                "if (t[t.length - 1] == '\\n') {"
+                                    "return t.substring(0, t.length - 1);"
+                                "} else {"
+                                    "return t;"
+                                "}"
+                            "}"
+                        "});"
+                     "});"
+                 "</script>\n";
+    }
+
     if (!extra.isEmpty()) {
         templ.replace(HtmlHolder::c_extraHolder, extra);
     }
@@ -983,6 +1015,9 @@ QString VUtils::generateMathJaxPreviewTemplate()
                  "                    },\n"
                  "                    messageStyle: \"none\"});\n"
                  "</script>\n";
+
+    extraFile += "<script src=\"qrc" + VNote::c_wavedromThemeFile + "\"></script>\n" +
+                 "<script src=\"qrc" + VNote::c_wavedromJsFile + "\"></script>\n";
 
     // PlantUML.
     extraFile += "<script type=\"text/javascript\" src=\"" + VNote::c_plantUMLJsFile + "\"></script>\n" +
@@ -1875,4 +1910,19 @@ QString VUtils::escapeHtml(QString p_text)
 {
     p_text.replace(">", "&gt;").replace("<", "&lt;").replace("&", "&amp;");
     return p_text;
+}
+
+QString VUtils::encodeSpacesInPath(const QString &p_path)
+{
+    QString tmp(p_path);
+    tmp.replace(' ', "%20");
+    return tmp;
+}
+
+void VUtils::prependDotIfRelative(QString &p_path)
+{
+    if (QFileInfo(p_path).isRelative()
+        && !p_path.startsWith("../") && !p_path.startsWith("./")) {
+        p_path.prepend("./");
+    }
 }

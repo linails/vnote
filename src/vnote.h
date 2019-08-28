@@ -73,6 +73,10 @@ public:
     static const QString c_flowchartJsFile;
     static const QString c_raphaelJsFile;
 
+    // WaveDrom
+    static const QString c_wavedromJsFile;
+    static const QString c_wavedromThemeFile;
+
     // PlantUML
     static const QString c_plantUMLJsFile;
     static const QString c_plantUMLZopfliJsFile;
@@ -120,14 +124,14 @@ public:
 
     static QString generateMathJaxPreviewTemplate();
 
+    static const QString &getMonospaceFont();
+
 public slots:
     void updateTemplate();
 
     void updateSimpletHtmlTemplate();
 
 private:
-    const QString &getMonospacedFont() const;
-
     // Given the path of an external file, create a VOrphanFile struct.
     VOrphanFile *getOrphanFile(const QString &p_path,
                                bool p_modifiable,

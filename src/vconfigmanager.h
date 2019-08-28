@@ -89,8 +89,6 @@ public:
 
     void initialize();
 
-    void initEditorConfigs();
-
     // Read config from the directory config json file into a QJsonObject.
     // @path is the directory containing the config json file.
     static QJsonObject readDirectoryConfig(const QString &path);
@@ -265,6 +263,9 @@ public:
 
     bool getEnableMathjax() const;
     void setEnableMathjax(bool p_enabled);
+
+    bool getEnableWavedrom() const;
+    void setEnableWavedrom(bool p_enabled);
 
     bool getEnableGraphviz() const;
     void setEnableGraphviz(bool p_enabled);
@@ -602,6 +603,7 @@ public:
     bool getParsePasteLocalImage() const;
 
     bool versionChanged() const;
+    bool isFreshInstall() const;
 
     const QColor &getBaseBackground() const;
     void setBaseBackground(const QColor &p_bg);
@@ -620,7 +622,37 @@ public:
     bool getEnableSplitTagFileList() const;
     void setEnableSplitTagFileList(bool p_enable);
 
+    // Get the path to browse when inserting image.
+    QString getImageBrowsePath() const;
+    void setImageBrowsePath(const QString &p_path);
+
+    bool getPrependDotInRelativePath() const;
+    void setPrependDotInRelativePath(bool p_enabled);
+
+    bool getEnableSmartTable() const;
+    void setEnableSmartTable(bool p_enabled);
+
+    bool getAllowUserTrack() const;
+    void setAllowUserTrack(bool p_enabled);
+
+    bool getSyncNoteListToTab() const;
+    void setSyncNoteListToTab(bool p_enabled);
+
+    QDate getLastUserTrackDate() const;
+    void updateLastUserTrackDate();
+
+    QDateTime getLastStartDateTime() const;
+    void updateLastStartDateTime();
+
+    int getTableFormatInterval() const;
+
+    bool getEnableCodeBlockCopyButton() const;
+
 private:
+    void initEditorConfigs();
+
+    void initMarkdownConfigs();
+
     // Look up a config from user and default settings.
     QVariant getConfigFromSettings(const QString &section, const QString &key) const;
 
@@ -777,6 +809,9 @@ private:
 
     // Enable Mathjax.
     bool m_enableMathjax;
+
+    // Enable WaveDrom.
+    bool m_enableWavedrom;
 
     // Enable Graphviz.
     bool m_enableGraphviz;
@@ -1078,6 +1113,9 @@ private:
     // Whether the VNote instance has different version of vnote.ini.
     bool m_versionChanged;
 
+    // Whether VNote is first installed on this machine.
+    bool m_freshInstall;
+
     // Base background of MainWindow.
     QColor m_baseBackground;
 
@@ -1093,6 +1131,21 @@ private:
 
     // Editor font family to override the value set by the style.
     QString m_editorFontFamily;
+
+    // Whether prepend a dot in the relative path of images and attachments.
+    bool m_prependDotInRelativePath;
+
+    // Whether enable smart table.
+    bool m_enableSmartTable;
+
+    // Whether auto locate to current tab in note list.
+    bool m_syncNoteListToCurrentTab;
+
+    // Interval (milliseconds) to format table.
+    int m_tableFormatIntervalMS;
+
+    // Whether enable copy button in code block in read mode.
+    bool m_enableCodeBlockCopyButton;
 
     // The name of the config file in each directory.
     static const QString c_dirConfigFile;
@@ -1599,6 +1652,21 @@ inline void VConfigManager::setEnableMathjax(bool p_enabled)
 
     m_enableMathjax = p_enabled;
     setConfigToSettings("global", "enable_mathjax", m_enableMathjax);
+}
+
+inline bool VConfigManager::getEnableWavedrom() const
+{
+    return m_enableWavedrom;
+}
+
+inline void VConfigManager::setEnableWavedrom(bool p_enabled)
+{
+    if (m_enableWavedrom == p_enabled) {
+        return;
+    }
+
+    m_enableWavedrom = p_enabled;
+    setConfigToSettings("markdown", "enable_wavedrom", m_enableWavedrom);
 }
 
 inline bool VConfigManager::getEnableGraphviz() const
@@ -2766,6 +2834,11 @@ inline bool VConfigManager::versionChanged() const
     return m_versionChanged;
 }
 
+inline bool VConfigManager::isFreshInstall() const
+{
+    return m_freshInstall;
+}
+
 inline const QColor &VConfigManager::getBaseBackground() const
 {
     return m_baseBackground;
@@ -2840,4 +2913,80 @@ inline void VConfigManager::setEnableSplitTagFileList(bool p_enable)
 {
     setConfigToSettings("global", "split_tag_file_list", p_enable);
 }
+
+inline QString VConfigManager::getImageBrowsePath() const
+{
+    return getConfigFromSessionSettings("global", "image_browse_path").toString();
+}
+
+inline void VConfigManager::setImageBrowsePath(const QString &p_path)
+{
+    setConfigToSessionSettings("global", "image_browse_path", p_path);
+}
+
+inline bool VConfigManager::getPrependDotInRelativePath() const
+{
+    return m_prependDotInRelativePath;
+}
+
+inline void VConfigManager::setPrependDotInRelativePath(bool p_enabled)
+{
+    if (m_prependDotInRelativePath == p_enabled) {
+        return;
+    }
+
+    m_prependDotInRelativePath = p_enabled;
+    setConfigToSettings("markdown", "prepend_dot_in_relative_path", m_prependDotInRelativePath);
+}
+
+inline bool VConfigManager::getEnableSmartTable() const
+{
+    return m_enableSmartTable;
+}
+
+inline void VConfigManager::setEnableSmartTable(bool p_enabled)
+{
+    if (m_enableSmartTable == p_enabled) {
+        return;
+    }
+
+    m_enableSmartTable = p_enabled;
+    setConfigToSettings("editor", "enable_smart_table", m_enableSmartTable);
+}
+
+inline bool VConfigManager::getAllowUserTrack() const
+{
+    return getConfigFromSettings("global", "allow_user_track").toBool();
+}
+
+inline void VConfigManager::setAllowUserTrack(bool p_enabled)
+{
+    setConfigToSettings("global", "allow_user_track", p_enabled);
+}
+
+inline bool VConfigManager::getSyncNoteListToTab() const
+{
+    return m_syncNoteListToCurrentTab;
+}
+
+inline void VConfigManager::setSyncNoteListToTab(bool p_enabled)
+{
+    if (m_syncNoteListToCurrentTab == p_enabled) {
+        return;
+    }
+
+    m_syncNoteListToCurrentTab = p_enabled;
+    setConfigToSettings("global", "sync_note_list_to_current_tab", m_syncNoteListToCurrentTab);
+}
+
+inline int VConfigManager::getTableFormatInterval() const
+{
+    return m_tableFormatIntervalMS;
+}
+
+inline bool VConfigManager::getEnableCodeBlockCopyButton() const
+{
+    return m_enableCodeBlockCopyButton;
+}
+
 #endif // VCONFIGMANAGER_H

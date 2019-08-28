@@ -96,6 +96,8 @@ Insert inline code. Press `Ctrl+;` again to exit. Current selected text will be 
 Insert fenced code block. Press `Ctrl+M` again to exit. Current selected text will be wrapped into a code block if exists.
 - `Ctrl+L`  
 Insert link.
+- `Ctrl+.`  
+Insert table.
 - `Ctrl+'`  
 Insert image.
 - `Ctrl+H`  
@@ -272,6 +274,8 @@ Expand/restore live preview panel.
 Toggle full-text search.
 - `P`  
 Parse HTML as Markdown text in clipboard and paste.
+- `N`  
+View and edit current note's information.
 - `Shift+?`   
 Display shortcuts documentation.
 
@@ -280,6 +284,12 @@ Within the Captain Mode, `W` will turn VNote into **Navigation Mode**. In this m
 
 # Vim Mode
 VNote supports a simple but useful Vim mode, including **Normal**, **Insert**, **Visual**, and **VisualLine** modes.
+
+::: alert-info
+
+Open `Settings` dialog via the `File` menu, then jump to `Read/Edit` tab and you could enable Vim via the combo box in `Key mode`. Restart VNote to take effect.
+
+:::
 
 VNote supports following features of Vim:
 

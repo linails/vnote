@@ -3,6 +3,7 @@
 #include <QPrinter>
 #include <QPrintDialog>
 #include <QPainter>
+#include <QWebEnginePage>
 
 #include "vmainwindow.h"
 #include "vdirectorytree.h"
@@ -85,7 +86,8 @@ VMainWindow::VMainWindow(VSingleInstanceGuard *p_guard, QWidget *p_parent)
       m_windowOldState(Qt::WindowNoState),
       m_requestQuit(false),
       m_printer(NULL),
-      m_ue(NULL)
+      m_ue(NULL),
+      m_syncNoteListToCurrentTab(true)
 {
     qsrand(QDateTime::currentDateTime().toTime_t());
 
@@ -195,6 +197,10 @@ void VMainWindow::registerCaptainAndNavigationTargets()
                                      g_config->getCaptainShortcutKeySequence("ExpandMode"),
                                      this,
                                      toggleExpandModeByCaptain);
+    m_captain->registerCaptainTarget(tr("CurrentNoteInfo"),
+                                     g_config->getCaptainShortcutKeySequence("CurrentNoteInfo"),
+                                     this,
+                                     currentNoteInfoByCaptain);
     m_captain->registerCaptainTarget(tr("DiscardAndRead"),
                                      g_config->getCaptainShortcutKeySequence("DiscardAndRead"),
                                      this,
@@ -270,7 +276,14 @@ void VMainWindow::setupUI()
     connect(m_fileList, &VFileList::fileClicked,
             m_editArea, &VEditArea::openFile);
     connect(m_fileList, &VFileList::fileCreated,
-            m_editArea, &VEditArea::openFile);
+            m_editArea, [this](VNoteFile *p_file,
+                               OpenFileMode p_mode,
+                               bool p_forceMode) {
+                if (p_file->getDocType() == DocType::Markdown
+                    || p_file->getDocType() == DocType::Html) {
+                    m_editArea->openFile(p_file, p_mode, p_forceMode);
+                }
+            });
     connect(m_fileList, &VFileList::fileUpdated,
             m_editArea, &VEditArea::handleFileUpdated);
     connect(m_editArea, &VEditArea::tabStatusUpdated,
@@ -303,6 +316,7 @@ void VMainWindow::setupUI()
 void VMainWindow::setupNaviBox()
 {
     m_naviBox = new VToolBox();
+    m_naviBox->setObjectName("MainToolBox");
 
     setupNotebookPanel();
     m_naviBox->addItem(m_nbSplitter,
@@ -452,7 +466,7 @@ QToolBar *VMainWindow::initViewToolBar(QSize p_iconSize)
     viewMenu->addAction(menuBarAct);
 
     expandViewAct = new QAction(VIconUtils::toolButtonIcon(":/resources/icons/expand.svg"),
-                                tr("Expand"),
+                                tr("Expand Edit Area"),
                                 this);
     VUtils::fixTextWithCaptainShortcut(expandViewAct, "ExpandMode");
     expandViewAct->setStatusTip(tr("Expand the edit area"));
@@ -573,9 +587,22 @@ QToolBar *VMainWindow::initEditToolBar(QSize p_iconSize)
 
     m_editToolBar->addAction(codeBlockAct);
 
+    QAction *tableAct = new QAction(VIconUtils::toolButtonIcon(":/resources/icons/table.svg"),
+                                    tr("Table\t%1").arg(VUtils::getShortcutText("Ctrl+.")),
+                                    this);
+    tableAct->setStatusTip(tr("Insert a table"));
+    connect(tableAct, &QAction::triggered,
+            this, [this](){
+                if (m_curTab) {
+                    m_curTab->insertTable();
+                }
+            });
+
+    m_editToolBar->addAction(tableAct);
+
     // Insert link.
     QAction *insetLinkAct = new QAction(VIconUtils::toolButtonIcon(":/resources/icons/link.svg"),
-                                        tr("Insert Link\t%1").arg(VUtils::getShortcutText("Ctrl+L")),
+                                        tr("Link\t%1").arg(VUtils::getShortcutText("Ctrl+L")),
                                         this);
     insetLinkAct->setStatusTip(tr("Insert a link"));
     connect(insetLinkAct, &QAction::triggered,
@@ -589,7 +616,7 @@ QToolBar *VMainWindow::initEditToolBar(QSize p_iconSize)
 
     // Insert image.
     QAction *insertImageAct = new QAction(VIconUtils::toolButtonIcon(":/resources/icons/insert_image.svg"),
-                                          tr("Insert Image\t%1").arg(VUtils::getShortcutText("Ctrl+'")),
+                                          tr("Image\t%1").arg(VUtils::getShortcutText("Ctrl+'")),
                                           this);
     insertImageAct->setStatusTip(tr("Insert an image from file or URL"));
     connect(insertImageAct, &QAction::triggered,
@@ -715,7 +742,9 @@ QToolBar *VMainWindow::initFileToolBar(QSize p_iconSize)
             m_fileList, &VFileList::newFile);
 
     noteInfoAct = new QAction(VIconUtils::toolButtonIcon(":/resources/icons/note_info_tb.svg"),
-                              tr("Note Info"), this);
+                              tr("Note Info"),
+                              this);
+    VUtils::fixTextWithCaptainShortcut(noteInfoAct, "CurrentNoteInfo");
     noteInfoAct->setStatusTip(tr("View and edit current note's information"));
     connect(noteInfoAct, &QAction::triggered,
             this, &VMainWindow::curEditFileInfo);
@@ -820,7 +849,7 @@ void VMainWindow::initHelpMenu()
     docAct->setToolTip(tr("View VNote's documentation"));
     connect(docAct, &QAction::triggered,
             this, []() {
-                QString url("http://vnote.readthedocs.io");
+                QString url("https://tamlok.github.io/vnote");
                 QDesktopServices::openUrl(url);
             });
 
@@ -828,7 +857,7 @@ void VMainWindow::initHelpMenu()
     donateAct->setToolTip(tr("Donate to VNote or view the donate list"));
     connect(donateAct, &QAction::triggered,
             this, []() {
-                QString url("https://github.com/tamlok/vnote#donate");
+                QString url("https://tamlok.github.io/vnote/en_us/#!donate.md");
                 QDesktopServices::openUrl(url);
             });
 
@@ -840,8 +869,8 @@ void VMainWindow::initHelpMenu()
                 updater.exec();
             });
 
-    QAction *starAct = new QAction(tr("Star VNote on &Github"), this);
-    starAct->setToolTip(tr("Give a star to VNote on Github project"));
+    QAction *starAct = new QAction(tr("Star VNote on &GitHub"), this);
+    starAct->setToolTip(tr("Give a star to VNote on GitHub project"));
     connect(starAct, &QAction::triggered,
             this, []() {
                 QString url("https://github.com/tamlok/vnote");
@@ -849,7 +878,7 @@ void VMainWindow::initHelpMenu()
             });
 
     QAction *feedbackAct = new QAction(tr("&Feedback"), this);
-    feedbackAct->setToolTip(tr("Open an issue on Github"));
+    feedbackAct->setToolTip(tr("Open an issue on GitHub"));
     connect(feedbackAct, &QAction::triggered,
             this, []() {
                 QString url("https://github.com/tamlok/vnote/issues");
@@ -919,34 +948,7 @@ void VMainWindow::initMarkdownMenu()
 
     markdownMenu->addSeparator();
 
-    QAction *mermaidAct = new QAction(tr("&Mermaid Diagram"), this);
-    mermaidAct->setToolTip(tr("Enable Mermaid for graph and diagram (re-open current tabs to make it work)"));
-    mermaidAct->setCheckable(true);
-    connect(mermaidAct, &QAction::triggered,
-            this, &VMainWindow::enableMermaid);
-    markdownMenu->addAction(mermaidAct);
-
-    mermaidAct->setChecked(g_config->getEnableMermaid());
-
-    QAction *flowchartAct = new QAction(tr("&Flowchart.js"), this);
-    flowchartAct->setToolTip(tr("Enable Flowchart.js for flowchart diagram (re-open current tabs to make it work)"));
-    flowchartAct->setCheckable(true);
-    connect(flowchartAct, &QAction::triggered,
-            this, [this](bool p_enabled){
-                g_config->setEnableFlowchart(p_enabled);
-                VUtils::promptForReopen(this);
-            });
-    markdownMenu->addAction(flowchartAct);
-    flowchartAct->setChecked(g_config->getEnableFlowchart());
-
-    QAction *mathjaxAct = new QAction(tr("Math&Jax"), this);
-    mathjaxAct->setToolTip(tr("Enable MathJax for math support in Markdown (re-open current tabs to make it work)"));
-    mathjaxAct->setCheckable(true);
-    connect(mathjaxAct, &QAction::triggered,
-            this, &VMainWindow::enableMathjax);
-    markdownMenu->addAction(mathjaxAct);
-
-    mathjaxAct->setChecked(g_config->getEnableMathjax());
+    initMarkdownExtensionMenu(markdownMenu);
 
     markdownMenu->addSeparator();
 
@@ -1335,6 +1337,17 @@ void VMainWindow::initEditMenu()
     tabAct->setChecked(g_config->getEnableTabHighlight());
 
     initAutoScrollCursorLineMenu(editMenu);
+
+    // Smart table.
+    QAction *smartTableAct = new QAction(tr("Smart Table"), this);
+    smartTableAct->setToolTip(tr("Format table automatically"));
+    smartTableAct->setCheckable(true);
+    connect(smartTableAct, &QAction::triggered,
+            this, [](bool p_checked) {
+                g_config->setEnableSmartTable(p_checked);
+            });
+    editMenu->addAction(smartTableAct);
+    smartTableAct->setChecked(g_config->getEnableSmartTable());
 }
 
 void VMainWindow::initDockWindows()
@@ -1460,9 +1473,9 @@ void VMainWindow::aboutMessage()
     info += "<br/>";
     info += tr("Author: Le Tan (tamlok)");
     info += "<br/><br/>";
-    info += tr("VNote is a free and open source Vim-inspired note-taking application that knows programmers and Markdown better.");
+    info += tr("VNote is a free and open source note-taking application that knows programmers and Markdown better.");
     info += "<br/><br/>";
-    info += tr("Please visit <a href=\"https://github.com/tamlok/vnote.git\">Github</a> for more information.");
+    info += tr("Please visit <a href=\"https://tamlok.github.io/vnote\">VNote</a> for more information.");
     QMessageBox::about(this, tr("About VNote"), info);
 }
 
@@ -1667,6 +1680,50 @@ void VMainWindow::initMarkdownitOptionMenu(QMenu *p_menu)
     optMenu->addAction(subAct);
     optMenu->addAction(metadataAct);
     optMenu->addAction(emojiAct);
+}
+
+void VMainWindow::initMarkdownExtensionMenu(QMenu *p_menu)
+{
+    QMenu *optMenu = p_menu->addMenu(tr("Extensions"));
+    optMenu->setToolTipsVisible(true);
+
+    QAction *mermaidAct = new QAction(tr("&Mermaid"), optMenu);
+    mermaidAct->setToolTip(tr("Enable Mermaid for graph and diagram (re-open current tabs to make it work)"));
+    mermaidAct->setCheckable(true);
+    mermaidAct->setChecked(g_config->getEnableMermaid());
+    connect(mermaidAct, &QAction::triggered,
+            this, &VMainWindow::enableMermaid);
+    optMenu->addAction(mermaidAct);
+
+    QAction *flowchartAct = new QAction(tr("&Flowchart.js"), optMenu);
+    flowchartAct->setToolTip(tr("Enable Flowchart.js for flowchart diagram (re-open current tabs to make it work)"));
+    flowchartAct->setCheckable(true);
+    flowchartAct->setChecked(g_config->getEnableFlowchart());
+    connect(flowchartAct, &QAction::triggered,
+            this, [this](bool p_enabled){
+                g_config->setEnableFlowchart(p_enabled);
+                VUtils::promptForReopen(this);
+            });
+    optMenu->addAction(flowchartAct);
+
+    QAction *mathjaxAct = new QAction(tr("Math&Jax"), optMenu);
+    mathjaxAct->setToolTip(tr("Enable MathJax for math support in Markdown (re-open current tabs to make it work)"));
+    mathjaxAct->setCheckable(true);
+    mathjaxAct->setChecked(g_config->getEnableMathjax());
+    connect(mathjaxAct, &QAction::triggered,
+            this, &VMainWindow::enableMathjax);
+    optMenu->addAction(mathjaxAct);
+
+    QAction *wavedromAct = new QAction(tr("&WaveDrom"), optMenu);
+    wavedromAct->setToolTip(tr("Enable WaveDrom for digital timing diagram (re-open current tabs to make it work)"));
+    wavedromAct->setCheckable(true);
+    wavedromAct->setChecked(g_config->getEnableWavedrom());
+    connect(wavedromAct, &QAction::triggered,
+            this, [this](bool p_enabled){
+                g_config->setEnableWavedrom(p_enabled);
+                VUtils::promptForReopen(this);
+            });
+    optMenu->addAction(wavedromAct);
 }
 
 void VMainWindow::initRenderBackgroundMenu(QMenu *menu)
@@ -2094,6 +2151,10 @@ void VMainWindow::handleAreaTabStatusUpdated(const VEditTabInfo &p_info)
 
         m_attachmentList->setFile(dynamic_cast<VNoteFile *>(m_curFile.data()));
 
+        if (m_syncNoteListToCurrentTab && g_config->getSyncNoteListToTab()) {
+            locateFile(m_curFile, false, false);
+        }
+
         QString title;
         if (m_curFile) {
             m_findReplaceDialog->updateState(m_curFile->getDocType(),
@@ -2247,9 +2308,12 @@ void VMainWindow::closeEvent(QCloseEvent *event)
             }
         }
 
+        m_syncNoteListToCurrentTab = false;
+
         if (!m_editArea->closeAllFiles(false)) {
             // Fail to close all the opened files, cancel closing app.
             event->ignore();
+            m_syncNoteListToCurrentTab = true;
             return;
         }
 
@@ -2286,11 +2350,9 @@ void VMainWindow::restoreStateAndGeometry()
 
     const QByteArray state = g_config->getMainWindowState();
     if (!state.isEmpty()) {
+        // restoreState() will restore the state of dock widgets.
         restoreState(state);
     }
-
-    m_toolDock->setVisible(g_config->getToolsDockChecked());
-    m_searchDock->setVisible(g_config->getSearchDockChecked());
 
     const QByteArray splitterState = g_config->getMainSplitterState();
     if (!splitterState.isEmpty()) {
@@ -2330,7 +2392,7 @@ void VMainWindow::keyPressEvent(QKeyEvent *event)
     QMainWindow::keyPressEvent(event);
 }
 
-bool VMainWindow::locateFile(VFile *p_file)
+bool VMainWindow::locateFile(VFile *p_file, bool p_focus, bool p_show)
 {
     bool ret = false;
     if (!p_file || p_file->getType() != FileType::Note) {
@@ -2352,13 +2414,15 @@ bool VMainWindow::locateFile(VFile *p_file)
 
             if (m_fileList->locateFile(file)) {
                 ret = true;
-                m_fileList->setFocus();
+                if (p_focus) {
+                    m_fileList->setFocus();
+                }
             }
         }
     }
 
     // Open the directory and file panels after location.
-    if (ret) {
+    if (ret && p_show) {
         showNotebookPanel();
     }
 
@@ -2807,6 +2871,17 @@ bool VMainWindow::toggleExpandModeByCaptain(void *p_target, void *p_data)
     return true;
 }
 
+bool VMainWindow::currentNoteInfoByCaptain(void *p_target, void *p_data)
+{
+    Q_UNUSED(p_data);
+    VMainWindow *obj = static_cast<VMainWindow *>(p_target);
+    if (obj->noteInfoAct->isEnabled()) {
+        obj->curEditFileInfo();
+    }
+
+    return true;
+}
+
 bool VMainWindow::discardAndReadByCaptain(void *p_target, void *p_data)
 {
     Q_UNUSED(p_data);
@@ -3059,9 +3134,11 @@ void VMainWindow::initThemeMenu(QMenu *p_menu)
 
     QActionGroup *ag = new QActionGroup(this);
     connect(ag, &QActionGroup::triggered,
-            this, [](QAction *p_action) {
+            this, [this](QAction *p_action) {
                 QString data = p_action->data().toString();
                 g_config->setTheme(data);
+
+                promptForVNoteRestart();
             });
 
     QList<QString> themes = g_config->getThemes();
@@ -3370,17 +3447,56 @@ void VMainWindow::setToolBarVisible(bool p_visible)
 void VMainWindow::kickOffStartUpTimer(const QStringList &p_files)
 {
     QTimer::singleShot(300, [this, p_files]() {
+        m_syncNoteListToCurrentTab = false;
+
         checkNotebooks();
         QCoreApplication::sendPostedEvents();
         promptNewNotebookIfEmpty();
         QCoreApplication::sendPostedEvents();
         openStartupPages();
         openFiles(p_files, false, g_config->getNoteOpenMode(), false, true);
-        if (g_config->versionChanged()) {
-            QString docFile = VUtils::getDocFile("welcome.md");
-            VFile *file = vnote->getFile(docFile, true);
-            m_editArea->openFile(file, OpenFileMode::Read);
+
+        checkIfNeedToShowWelcomePage();
+
+        if (g_config->versionChanged() && !g_config->getAllowUserTrack()) {
+            // Ask user whether allow tracking.
+            int ret = VUtils::showMessage(QMessageBox::Information,
+                                          tr("Collect User Statistics"),
+                                          tr("VNote would like to send a request to count active users."
+                                             "Do you allow this request?"),
+                                          tr("A request to https://tamlok.github.io/user_track/vnote.html will be sent if allowed."),
+                                          QMessageBox::Ok | QMessageBox::No,
+                                          QMessageBox::Ok,
+                                          this);
+            g_config->setAllowUserTrack(ret == QMessageBox::Ok);
         }
+
+        if (g_config->getAllowUserTrack()) {
+            int interval = (30 + qrand() % 60) * 1000;
+            QTimer::singleShot(interval, this, SLOT(collectUserStat()));
+        }
+
+        m_syncNoteListToCurrentTab = true;
+
+#if defined(Q_OS_WIN)
+        if (g_config->isFreshInstall()) {
+            VUtils::showMessage(QMessageBox::Information,
+                                tr("Notices for Windows Users"),
+                                tr("OpenGL requried by VNote may not work well on Windows by default."
+                                   "You may update your display card driver or set another openGL option in VNote's Settings dialog."
+                                   "Check <a href=\"https://github.com/tamlok/vnote/issues/853\">GitHub issue</a> for details."),
+                                tr("Strange behaviors include:<br/>"
+                                   "* Interface freezes and does not response;<br/>"
+                                   "* Widgets are out of order after maximizing and restoring the main window;<br/>"
+                                   "* No cursor in edit mode;<br/>"
+                                   "* Menus are not clickable in full screen mode."),
+                                QMessageBox::Ok,
+                                QMessageBox::Ok,
+                                this);
+        }
+#endif
+
+        g_config->updateLastStartDateTime();
     });
 }
 
@@ -3474,11 +3590,59 @@ void VMainWindow::setupFileListSplitOut(bool p_enabled)
     m_fileList->setEnableSplitOut(p_enabled);
     if (p_enabled) {
         m_nbSplitter->setOrientation(Qt::Horizontal);
-        m_nbSplitter->setStretchFactor(0, 1);
+        m_nbSplitter->setStretchFactor(0, 0);
         m_nbSplitter->setStretchFactor(1, 1);
     } else {
         m_nbSplitter->setOrientation(Qt::Vertical);
         m_nbSplitter->setStretchFactor(0, 1);
         m_nbSplitter->setStretchFactor(1, 2);
+    }
+}
+
+void VMainWindow::collectUserStat() const
+{
+    // One request per day.
+    auto lastCheckDate = g_config->getLastUserTrackDate();
+    if (lastCheckDate != QDate::currentDate()) {
+        g_config->updateLastUserTrackDate();
+
+        qDebug() << "send user track" << QDate::currentDate();
+
+        QWebEnginePage *page = new QWebEnginePage;
+
+        QString url = QString("https://tamlok.github.io/user_track/vnote/vnote_%1.html").arg(VConfigManager::c_version);
+        page->load(QUrl(url));
+        connect(page, &QWebEnginePage::loadFinished,
+                this, [page](bool) {
+                    VUtils::sleepWait(2000);
+                    page->deleteLater();
+                });
+    }
+
+    QTimer::singleShot(30 * 60 * 1000, this, SLOT(collectUserStat()));
+}
+
+void VMainWindow::promptForVNoteRestart()
+{
+    int ret = VUtils::showMessage(QMessageBox::Information,
+                                  tr("Restart Needed"),
+                                  tr("Do you want to restart VNote now?"),
+                                  tr("VNote needs to restart to apply new configurations."),
+                                  QMessageBox::Ok | QMessageBox::No,
+                                  QMessageBox::Ok,
+                                  this);
+    if (ret == QMessageBox::Ok) {
+        restartVNote();
+    }
+}
+
+void VMainWindow::checkIfNeedToShowWelcomePage()
+{
+    if (g_config->versionChanged()
+        || (QDate::currentDate().dayOfYear() % 64 == 1
+            && g_config->getLastStartDateTime().date() != QDate::currentDate())) {
+        QString docFile = VUtils::getDocFile("welcome.md");
+        VFile *file = vnote->getFile(docFile, true);
+        m_editArea->openFile(file, OpenFileMode::Read);
     }
 }

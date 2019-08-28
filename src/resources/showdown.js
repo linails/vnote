@@ -1,3 +1,5 @@
+var VRenderer = 'showdown';
+
 var renderer = new showdown.Converter({simplifiedAutoLink: 'true',
                                        excludeTrailingPunctuationFromURLs: 'true',
                                        strikethrough: 'true',
@@ -51,6 +53,7 @@ var mdHasTocSection = function(markdown) {
 var highlightCodeBlocks = function(doc,
                                    enableMermaid,
                                    enableFlowchart,
+                                   enableWavedrom,
                                    enableMathJax,
                                    enablePlantUML,
                                    enableGraphviz) {
@@ -58,6 +61,15 @@ var highlightCodeBlocks = function(doc,
     for (var i = 0; i < codes.length; ++i) {
         var code = codes[i];
         if (code.parentElement.tagName.toLowerCase() == 'pre') {
+            if (code.classList.contains('language-wavedrom')) {
+                if (enableWavedrom) {
+                    continue;
+                } else {
+                    code.classList.remove('language-wavedrom');
+                    code.classList.add('language-json');
+                }
+            }
+
             if (enableMermaid && code.classList.contains('language-mermaid')) {
                 // Mermaid code block.
                 continue;
@@ -65,6 +77,9 @@ var highlightCodeBlocks = function(doc,
                        && (code.classList.contains('language-flowchart')
                            || code.classList.contains('language-flow'))) {
                 // Flowchart code block.
+                continue;
+            } else if (enableWavedrom && code.classList.contains('language-wavedrom')) {
+                // Wavedrom code block.
                 continue;
             } else if (enableMathJax && code.classList.contains('language-mathjax')) {
                 // MathJax code block.
@@ -103,14 +118,17 @@ var updateText = function(text) {
     highlightCodeBlocks(document,
                         VEnableMermaid,
                         VEnableFlowchart,
+                        VEnableWavedrom,
                         VEnableMathjax,
                         VPlantUMLMode != 0,
                         VEnableGraphviz);
     renderMermaid('language-mermaid');
     renderFlowchart(['language-flowchart', 'language-flow']);
+    renderWavedrom('language-wavedrom');
     renderPlantUML('language-puml');
     renderGraphviz('language-dot');
     addClassToCodeBlock();
+    addCopyButtonToCodeBlock();
     renderCodeBlockLineNumber();
 
     // If you add new logics after handling MathJax, please pay attention to

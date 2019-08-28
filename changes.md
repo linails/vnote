@@ -1,4 +1,86 @@
 # Changes History
+## v2.7.2
+- Use 5.9.8 on macOS;
+- Call Java (PlantUML) directly on Win;
+
+## v2.7.1
+- Fix PlantUML command;
+- Use 5.12.0 on macOS;
+- Add config [web]/enable_code_block_copy_button for copy button in code block in read mode;
+
+## v2.7
+- Editor
+    - Fix smart table bugs;
+    - Fix improper leading line space on macOS;
+- Fix bug which will open two tabs for the same file;
+- Add copy button to copy code block in read mode;
+- PluatUML: use shell to launch Java;
+- Use qt 5.12.1 on macOS for better performance;
+- Add theme `v_simple` provided by user LuoshuiTianyi;
+- Support adding sibling folder in context menu;
+
+## v2.6
+- Version-specific user track;
+
+## v2.5
+- Do not open unknown type file when creating a new note;
+- Support Right-To-Left text in edit mode (with Vim mode disabled);
+- Remove credict information in export template;
+
+## v2.4
+- Bundle qt5ct in Linux for native look support;
+- Use `Return` or `Enter` to confirm selection in macOS (besides `Cmd+O`);
+- Support sync note list to current note automatically via config `global/sync_note_list_to_current_tab`;
+- Add `Ctrl+E N` to view and edit current note's information;
+- Fix Markdown highlighter to handle fenced code block without a leading empty line;
+- Prompt for restart after changing theme;
+
+## v2.3
+- Add Japanese translations (thanks to @miurahr);
+- Editor
+    - Bug fix of smart table;
+    - Allow to disable smart table;
+- Update to Qt 5.9.7 in CI in Linux;
+- Add user track logics for users counting;
+- Add CMake build system;
+    - Support multiple packaging genration;
+      - QtIFW GUI installer
+      - Debian package
+      - RPM package
+      - AppImage
+      - Tar.gz package
+      - ZIP package
+      - Windows Nullsoft installer
+      - Windows NuGet package
+      - Mac OS X dmg package
+    - Support staic code checkers;
+      - clang-tidy
+      - crazy
+      - include-what-you-see
+    - Support modern IDEs;
+      - Microsoft Visual Studio 2017
+      - JetBrains CLion
+      - QtCreator
+      - XCode
+      - VSCode
+
+## v2.2
+- Editor
+    - Support smart GFM table;
+    - support auto scrolling cursor into center;
+    - Support specifying font via settings to override style config;
+    - Guess image title from the file name;
+    - Support ~~~ as fenced code block marker;
+- MathJax
+    - Support equation number;
+    - Support \begin and \end directly;
+    - Support $..$ in \text{} within $$...$$;
+- NotebookPanel: support spliting file list out;
+- Add openGL option in settings on Windows;
+- Markdown-it
+    - Support alert text via markdown-it-container plugin;
+- Support WaveDrom for digital timing diagram;
+
 ## v2.1
 - UniversalEntry/Searcher: `Ctrl+B` to expand/collapse all items;
 - Captain mode: support specifying keyboard layout mappings, such as Russian or French;

@@ -72,6 +72,9 @@ public:
     // User requests to insert a link.
     void insertLink();
 
+    // User requests to insert a table.
+    virtual void insertTable() = 0;
+
     // Used for incremental search.
     // User has enter the content to search, but does not enter the "find" button yet.
     bool peekText(const QString &p_text, uint p_options, bool p_forward = true);
@@ -213,6 +216,7 @@ public:
     virtual bool findW(const QRegExp &p_exp,
                        QTextDocument::FindFlags p_options = QTextDocument::FindFlags()) = 0;
 
+    virtual bool isReadOnlyW() const = 0;
     virtual void setReadOnlyW(bool p_ro) = 0;
 
     virtual QWidget *viewportW() const = 0;

@@ -88,6 +88,10 @@ public:
 
     QSet<int> m_hruleBlocks;
 
+    // All table blocks.
+    // Sorted by start position ascendingly.
+    QVector<VTableBlock> m_tableBlocks;
+
 private:
     // Parse highlight elements for blocks from one parse result.
     static void parseBlocksHighlightOne(QVector<QVector<HLUnit>> &p_blocksHighlights,
@@ -107,6 +111,9 @@ private:
     // Parse HRule blocks from parse results.
     void parseHRuleBlocks(const PegMarkdownHighlighter *p_peg,
                           const QSharedPointer<PegParseResult> &p_result);
+
+    // Parse table blocks from parse results.
+    void parseTableBlocks(const QSharedPointer<PegParseResult> &p_result);
 
 #if 0
     void parseBlocksElementRegionOne(QHash<int, QVector<VElementRegion>> &p_regs,

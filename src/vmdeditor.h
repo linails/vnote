@@ -22,6 +22,7 @@ class VDocument;
 class VPreviewManager;
 class VCopyTextAsHtmlDialog;
 class VEditTab;
+class VTableHelper;
 
 class VMdEditor : public VTextEdit, public VEditor
 {
@@ -82,6 +83,8 @@ public:
     void updateHeaderSequenceByConfigChange();
 
     void updateFontAndPalette() Q_DECL_OVERRIDE;
+
+    void insertTable() Q_DECL_OVERRIDE;
 
 public slots:
     bool jumpTitle(bool p_forward, int p_relativeLevel, int p_repeat) Q_DECL_OVERRIDE;
@@ -150,6 +153,11 @@ public:
                QTextDocument::FindFlags p_options = QTextDocument::FindFlags()) Q_DECL_OVERRIDE
     {
         return find(p_exp, p_options);
+    }
+
+    bool isReadOnlyW() const Q_DECL_OVERRIDE
+    {
+        return isReadOnly();
     }
 
     void setReadOnlyW(bool p_ro) Q_DECL_OVERRIDE
@@ -324,6 +332,8 @@ private:
     VCodeBlockHighlightHelper *m_cbHighlighter;
 
     VPreviewManager *m_previewMgr;
+
+    VTableHelper *m_tableHelper;
 
     // Image links inserted while editing.
     QVector<ImageLink> m_insertedImages;

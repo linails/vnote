@@ -35,7 +35,7 @@ void VToolBox::setupUI()
     QVBoxLayout *mainLayout = new QVBoxLayout();
     mainLayout->addWidget(wid);
     mainLayout->addLayout(m_widgetLayout);
-    mainLayout->setContentsMargins(0, 0, 0, 0);
+    mainLayout->setContentsMargins(3, 0, 3, 0);
 
     setLayout(mainLayout);
 }

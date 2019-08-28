@@ -58,6 +58,9 @@ const QString VNote::c_mermaidForestCssFile = ":/utils/mermaid/mermaid.forest.cs
 const QString VNote::c_flowchartJsFile = ":/utils/flowchart.js/flowchart.min.js";
 const QString VNote::c_raphaelJsFile = ":/utils/flowchart.js/raphael.min.js";
 
+const QString VNote::c_wavedromJsFile = ":/utils/wavedrom/wavedrom.min.js";
+const QString VNote::c_wavedromThemeFile = ":/utils/wavedrom/wavedrom-theme.js";
+
 const QString VNote::c_plantUMLJsFile = "http://s.plantuml.com/synchro2.js";
 const QString VNote::c_plantUMLZopfliJsFile = "http://s.plantuml.com/zopfli.raw.min.js";
 
@@ -222,7 +225,7 @@ QString VNote::getNavigationLabelStyle(const QString &p_str, bool p_small) const
     static int pxHeight = 24;
     const int fontPt = p_small ? 12 : 15;
 
-    QString fontFamily = getMonospacedFont();
+    QString fontFamily = getMonospaceFont();
 
     if (p_str.size() != lastLen) {
         QFont font(fontFamily, fontPt);
@@ -261,7 +264,7 @@ QString VNote::getNavigationLabelStyle(const QString &p_str, bool p_small) const
     return style;
 }
 
-const QString &VNote::getMonospacedFont() const
+const QString &VNote::getMonospaceFont()
 {
     static QString font;
     if (font.isNull()) {

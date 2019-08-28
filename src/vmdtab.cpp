@@ -94,11 +94,13 @@ VMdTab::VMdTab(VFile *p_file, VEditArea *p_editArea,
                 }
             });
 
-    if (p_mode == OpenFileMode::Edit) {
-        showFileEditMode();
-    } else {
-        showFileReadMode();
-    }
+    QTimer::singleShot(50, this, [this, p_mode]() {
+                if (p_mode == OpenFileMode::Edit) {
+                    showFileEditMode();
+                } else {
+                    showFileReadMode();
+                }
+            });
 }
 
 void VMdTab::setupUI()
@@ -266,12 +268,13 @@ void VMdTab::showFileEditMode()
     // Generally, beginEdit() will generate the headers. Wait is needed when
     // highlight completion is going to re-generate the headers.
     int nrRetry = 10;
-    while (header.m_index > -1
-           && nrRetry-- > 0
-           && (m_outline.isEmpty() || m_outline.getType() != VTableOfContentType::BlockNumber)) {
-        qDebug() << "wait another 100 ms for editor's headers ready";
+    do {
+        // We still need to wait even when there is no header to scroll since
+        // setCurrentMode()'s sendPostedEvents().
         VUtils::sleepWait(100);
-    }
+    } while (header.m_index > -1
+             && nrRetry-- >= 0
+             && (m_outline.isEmpty() || m_outline.getType() != VTableOfContentType::BlockNumber));
 
     scrollEditorToHeader(header, false);
 
@@ -696,6 +699,16 @@ void VMdTab::insertLink()
     m_editor->insertLink();
 }
 
+void VMdTab::insertTable()
+{
+    if (!m_isEditMode) {
+        return;
+    }
+
+    Q_ASSERT(m_editor);
+    m_editor->insertTable();
+}
+
 void VMdTab::findText(const QString &p_text, uint p_options, bool p_peek,
                       bool p_forward)
 {
@@ -929,7 +942,7 @@ void VMdTab::focusChild()
         break;
 
     default:
-        Q_ASSERT(false);
+        this->setFocus();
         break;
     }
 }
@@ -1075,7 +1088,7 @@ void VMdTab::applySnippet()
     QWidgetAction *act = new QWidgetAction(&menu);
     act->setDefaultWidget(sel);
     connect(sel, &VInsertSelector::accepted,
-            this, [this, &menu]() {
+            this, [&menu]() {
                 QKeyEvent *escEvent = new QKeyEvent(QEvent::KeyPress, Qt::Key_Escape,
                                                     Qt::NoModifier);
                 QCoreApplication::postEvent(&menu, escEvent);

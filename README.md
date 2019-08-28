@@ -1,5 +1,5 @@
 # VNote
-[中文 Chinese](./README_zh.md)
+[中文 Chinese](./README_zh.md) | [日本語 Japanese](./README_ja.md)
 
 **VNote is a note-taking application that knows programmers and Markdown better.**
 
@@ -60,6 +60,9 @@ makepkg -sic
 ```
 
 There is also a development version that tracks the latest master [vnote-git](https://aur.archlinux.org/packages/vnote-git/).
+
+### NixOS
+Thank @kuznero for packaging VNote in NixOS. It should be available in `unstable` and `unstable-small` channels.
 
 ## MacOS
 [![Build Status](https://travis-ci.org/tamlok/vnote.svg?branch=master)](https://travis-ci.org/tamlok/vnote)
@@ -125,7 +128,7 @@ You could help VNote's development in many ways.
 
 <img src="screenshots/wechat_pay.png" width="256px" height="256px" />
 
-Thanks very much to [them](https://github.com/tamlok/vnote/wiki/Donate-List) who donated to VNote!
+Thank [users who donated to VNote](https://github.com/tamlok/vnote/wiki/Donate-List)!
 
 # Why VNote
 ## Markdown Editor & Notes Management
@@ -173,7 +176,7 @@ VNote supports powerful **in-place preview** for images, diagrams, and formulas 
 Just paste your image into the Markdown note, VNote will manage all other stuffs. VNote stores images in a specified folder in the same folder with the note. VNote will pop up a window to preview the image when you insert an image. Furthermore, VNote will delete the useless image files automatically after you remove the image links.
 
 ## Universal Entry & Full-Text Search
-VNote has powerful built-in full-text search with **Regular Expression** and **Fuzzy Search** support. The search could be executed wihtin all notebooks, current notebook, or current folder, targeted at name or content.
+VNote has powerful built-in full-text search with **Regular Expression** and **Fuzzy Search** support. The search could be executed within all notebooks, current notebook, or current folder, targeted at name or content.
 
 Like the `CtrlP` in Vim, VNote supports **Universal Entry** to reach anything by typing in a simple input.
 

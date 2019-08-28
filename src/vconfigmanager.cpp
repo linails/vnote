@@ -10,6 +10,7 @@
 #include <QStandardPaths>
 #include <QCoreApplication>
 #include <QScopedPointer>
+#include <QDateTime>
 
 #include "utils/vutils.h"
 #include "vstyleparser.h"
@@ -19,7 +20,7 @@ const QString VConfigManager::orgName = QString("vnote");
 
 const QString VConfigManager::appName = QString("vnote");
 
-const QString VConfigManager::c_version = QString("2.1");
+const QString VConfigManager::c_version = QString("2.7.2");
 
 const QString VConfigManager::c_dirConfigFile = QString("_vnote.json");
 
@@ -326,27 +327,37 @@ void VConfigManager::initialize()
     m_highlightMatchesInPage = getConfigFromSettings("global",
                                                      "highlight_matches_in_page").toBool();
 
+    m_syncNoteListToCurrentTab = getConfigFromSettings("global",
+                                                       "sync_note_list_to_current_tab").toBool();
+
     initEditorConfigs();
+
+    initMarkdownConfigs();
+
+    m_enableCodeBlockCopyButton = getConfigFromSettings("web",
+                                                        "enable_code_block_copy_button").toBool();
 }
 
 void VConfigManager::initEditorConfigs()
 {
-    m_autoIndent = getConfigFromSettings("editor", "auto_indent").toBool();
+    const QString section("editor");
 
-    m_autoList = getConfigFromSettings("editor", "auto_list").toBool();
+    m_autoIndent = getConfigFromSettings(section, "auto_indent").toBool();
 
-    m_autoQuote = getConfigFromSettings("editor", "auto_quote").toBool();
+    m_autoList = getConfigFromSettings(section, "auto_list").toBool();
 
-    int keyMode = getConfigFromSettings("editor", "key_mode").toInt();
+    m_autoQuote = getConfigFromSettings(section, "auto_quote").toBool();
+
+    int keyMode = getConfigFromSettings(section, "key_mode").toInt();
     if (keyMode < 0 || keyMode >= (int)KeyMode::Invalid) {
         keyMode = 0;
     }
     m_keyMode = (KeyMode)keyMode;
 
-    m_enableSmartImInVimMode = getConfigFromSettings("editor",
+    m_enableSmartImInVimMode = getConfigFromSettings(section,
                                                      "enable_smart_im_in_vim_mode").toBool();
 
-    QString tmpLeader = getConfigFromSettings("editor",
+    QString tmpLeader = getConfigFromSettings(section,
                                               "vim_leader_key").toString();
     if (tmpLeader.isEmpty()) {
         m_vimLeaderKey = QChar(' ');
@@ -357,16 +368,28 @@ void VConfigManager::initEditorConfigs()
         }
     }
 
-    m_enableTabHighlight = getConfigFromSettings("editor",
+    m_enableTabHighlight = getConfigFromSettings(section,
                                                  "enable_tab_highlight").toBool();
 
-    m_parsePasteLocalImage = getConfigFromSettings("editor", "parse_paste_local_image").toBool();
+    m_parsePasteLocalImage = getConfigFromSettings(section, "parse_paste_local_image").toBool();
 
-    m_enableExtraBuffer = getConfigFromSettings("editor", "enable_extra_buffer").toBool();
+    m_enableExtraBuffer = getConfigFromSettings(section, "enable_extra_buffer").toBool();
 
-    m_autoScrollCursorLine = getConfigFromSettings("editor", "auto_scroll_cursor_line").toInt();
+    m_autoScrollCursorLine = getConfigFromSettings(section, "auto_scroll_cursor_line").toInt();
 
-    m_editorFontFamily = getConfigFromSettings("editor", "editor_font_family").toString();
+    m_editorFontFamily = getConfigFromSettings(section, "editor_font_family").toString();
+
+    m_enableSmartTable = getConfigFromSettings(section, "enable_smart_table").toBool();
+
+    m_tableFormatIntervalMS = getConfigFromSettings(section, "table_format_interval").toInt();
+}
+
+void VConfigManager::initMarkdownConfigs()
+{
+    const QString section("markdown");
+    m_enableWavedrom = getConfigFromSettings(section, "enable_wavedrom").toBool();
+
+    m_prependDotInRelativePath = getConfigFromSettings(section, "prepend_dot_in_relative_path").toBool();
 }
 
 void VConfigManager::initSettings()
@@ -1482,6 +1505,8 @@ void VConfigManager::initThemes()
     m_themes.insert(VPalette::themeName(file), file);
     file = ":/resources/themes/v_detorte/v_detorte.palette";
     m_themes.insert(VPalette::themeName(file), file);
+    file = ":/resources/themes/v_simple/v_simple.palette";
+    m_themes.insert(VPalette::themeName(file), file);
 
     outputBuiltInThemes();
 
@@ -1676,6 +1701,7 @@ void VConfigManager::checkVersion()
     const QString key("version");
     QString ver = getConfigFromSettings("global", key).toString();
     m_versionChanged = ver != c_version;
+    m_freshInstall = ver.isEmpty();
     if (m_versionChanged) {
         setConfigToSettings("global", key, c_version);
     }
@@ -1716,4 +1742,33 @@ void VConfigManager::setWindowsOpenGL(int p_openGL)
 
     QString fullKey("global/windows_opengl");
     userSet->setValue(fullKey, p_openGL);
+}
+
+QDate VConfigManager::getLastUserTrackDate() const
+{
+
+    auto dateStr = getConfigFromSessionSettings("global",
+                                                "last_user_track_date").toString();
+    return QDate::fromString(dateStr, Qt::ISODate);
+}
+
+void VConfigManager::updateLastUserTrackDate()
+{
+    auto date = QDate::currentDate();
+    setConfigToSessionSettings("global",
+                               "last_user_track_date",
+                               date.toString(Qt::ISODate));
+}
+
+QDateTime VConfigManager::getLastStartDateTime() const
+{
+    auto dateStr = getConfigFromSessionSettings("global",
+                                                "last_start_time").toString();
+    return QDateTime::fromString(dateStr, Qt::ISODate);
+}
+
+void VConfigManager::updateLastStartDateTime()
+{
+    auto dateTime = QDateTime::currentDateTime();
+    setConfigToSessionSettings("global", "last_start_time", dateTime.toString(Qt::ISODate));
 }

@@ -85,6 +85,9 @@ pre {
     display: block;
     overflow-y: hidden;
     overflow-x: auto;
+    -moz-tab-size: 4;
+    -o-tab-size: 4;
+    tab-size: 4;
 }
 
 code {
@@ -102,6 +105,9 @@ pre code {
     line-height: 1.5;
     font-family: Consolas, Monaco, Monospace, Courier;
     white-space: pre;
+    -moz-tab-size: 4;
+    -o-tab-size: 4;
+    tab-size: 4;
 }
 
 pre code.markdown-metadata {
@@ -136,6 +142,7 @@ hr {
 
 table {
    padding: 0;
+   margin: 1rem 0.5rem;
    border-collapse: collapse;
 }
 
@@ -177,6 +184,13 @@ div.mermaid-diagram {
 }
 
 div.flowchart-diagram {
+    padding: 0px 5px 0px 5px;
+    margin: 16px 0px 16px 0px;
+    width: fit-content;
+    overflow: hidden;
+}
+
+div.wavedrom-diagram {
     padding: 0px 5px 0px 5px;
     margin: 16px 0px 16px 0px;
     width: fit-content;

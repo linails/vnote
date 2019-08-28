@@ -1,12 +1,26 @@
 #!/bin/bash
 project_dir=$(pwd)
 
+# Complain when not in Travis environment
+if [ -z ${TRAVIS_COMMIT+x} ]; then
+    echo "This script is intended to be used only in Travis CI environment."
+    echo "To build VNote from source, please see the [documentation](https://tamlok.github.io/vnote/en_us/#!docs/Developers/Build%20VNote.md)."
+    exit 1
+fi
+
 # Install qt5.9
 sudo add-apt-repository ppa:george-edison55/cmake-3.x -y
-sudo add-apt-repository ppa:beineri/opt-qt596-trusty -y
+sudo add-apt-repository ppa:beineri/opt-qt597-trusty -y
 sudo apt-get update -qq
 sudo apt-get -y install qt59base qt59webengine qt59webchannel qt59svg qt59location qt59tools qt59translations
 source /opt/qt*/bin/qt*-env.sh
+
+# Compile qt5ct
+wget -c https://excellmedia.dl.sourceforge.net/project/qt5ct/qt5ct-0.37.tar.bz2
+tar xf qt5ct-0.*.tar.bz2
+cd qt5ct-0.*/
+QT_SELECT=5 qmake
+make -j$(nproc) && sudo make install
 
 # Compile newer version fcitx-qt5
 sudo apt-get -y install fcitx-libs-dev libgl1-mesa-dev bison
@@ -69,13 +83,13 @@ cp vnote-utils.git/linuxdeployqt-continuous-x86_64.AppImage ./linuxdeployqt-cont
 # wget -c "https://github.com/probonopd/linuxdeployqt/releases/download/continuous/linuxdeployqt-continuous-x86_64.AppImage"
 chmod a+x linuxdeployqt*.AppImage
 unset QTDIR; unset QT_PLUGIN_PATH ; unset LD_LIBRARY_PATH
-./linuxdeployqt*.AppImage ./dist/usr/share/applications/*.desktop -bundle-non-qt-libs -exclude-libs=libnss3,libnssutil3
+./linuxdeployqt*.AppImage ./dist/usr/share/applications/*.desktop -bundle-non-qt-libs -exclude-libs=libnss3,libnssutil3 -extra-plugins=platformthemes/libqt5ct.so,styles/libqt5ct-style.so
 
 # Copy translations
 cp /opt/qt59/translations/*_zh_CN.qm ./dist/usr/translations/
 
 # Package it for the second time.
-./linuxdeployqt*.AppImage ./dist/usr/share/applications/*.desktop -appimage -exclude-libs=libnss3,libnssutil3
+./linuxdeployqt*.AppImage ./dist/usr/share/applications/*.desktop -appimage -exclude-libs=libnss3,libnssutil3 -extra-plugins=platformthemes/libqt5ct.so,styles/libqt5ct-style.so
 
 tree dist/
 

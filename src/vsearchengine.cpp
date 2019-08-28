@@ -151,8 +151,17 @@ VSearchEngine::VSearchEngine(QObject *p_parent)
 
 VSearchEngine::~VSearchEngine()
 {
-    stop();
-    clear();
+    // stop()
+    for (auto const & th : m_workers) {
+        th->stop();
+    }
+
+    // clear()
+    clearAllWorkers();
+
+    m_finishedWorkers = 0;
+
+    m_result.clear();
 }
 
 void VSearchEngine::search(const QSharedPointer<VSearchConfig> &p_config,

@@ -1,5 +1,5 @@
 # VNote
-- [英文 English](./README.md)
+[英文 English](./README.md) | [日本語 Japanese](./README_ja.md)
 
 **VNote是一个更懂程序员和Markdown的笔记！**
 
@@ -73,6 +73,11 @@ AUR也提供一个和最新master分支同步的开发版本 [vnote-git](https:/
 brew cask install vnote
 ```
 
+### NixOS
+@kuznero packaged VNote in NixOS. It should be available in `unstable` and `unstable-small` channels.
+
+感谢 @kuznero 在NixOS上打包VNote。可以在`unstable`和`unstable-small`频道中找到VNote。
+
 # 简介
 
 **VNote**是一个基于Qt框架的、免费的开源笔记软件。VNote专注于Markdown的编辑与阅读，以提供舒适的编辑体验为设计目标。
@@ -126,7 +131,7 @@ VNote不是一个简单的Markdown编辑器。通过提供笔记管理功能，V
 
 <img src="screenshots/wechat_pay.png" width="256px" height="256px" />
 
-非常感谢这些VNote的 [捐赠者](https://github.com/tamlok/vnote/wiki/Donate-List) !
+非常感谢[这些用户](https://github.com/tamlok/vnote/wiki/Donate-List)对VNote的捐赠！
 
 # 开发VNote的动机
 ## Markdown编辑器与笔记管理

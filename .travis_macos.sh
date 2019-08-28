@@ -1,25 +1,40 @@
 #!/bin/bash
 project_dir=$(pwd)
 
+# Complain when not in Travis environment
+if [ -z ${TRAVIS_COMMIT+x} ]; then
+    echo "This script is intended to be used only in Travis CI environment."
+    echo "To build VNote from source, please see the [documentation](https://tamlok.github.io/vnote/en_us/#!docs/Developers/Build%20VNote.md)."
+    exit 1
+fi
+
 brew update > /dev/null
 
-# Use Qt5.9.3 instead of 5.10
-cd /usr/local/Homebrew/Library/Taps/homebrew/homebrew-core/Formula
-git checkout 13d52537d1e0e5f913de4639012 qt.rb
-sed -i '' 's/:mysql/"mysql"/' qt.rb
-sed -i '' 's/:postgresql/"postgresql"/' qt.rb
-cat qt.rb
-brew install qt
+brew install gnu-getopt
+export PATH="/usr/local/opt/gnu-getopt/bin:$PATH"
 
-QTDIR="/usr/local/opt/qt"
-PATH="$QTDIR/bin:$PATH"
+# Download Qt from Qt Installer
+cd ${project_dir}
+mkdir build
+cd build
+
+export VERBOSE=1
+export QT_CI_PACKAGES="qt.qt5.598.clang_64,qt.qt5.598.qtwebengine"
+
+git clone https://github.com/tamlok/qtci.git
+source qtci/path.env
+
+install-qt 5.9.8
+source qt-5.9.8.env
+
+echo $PATH
+
+QTDIR="${project_dir}/build/Qt/5.9.8/clang_64"
 LDFLAGS=-L$QTDIR/lib
 CPPFLAGS=-I$QTDIR/include
 
 # Build your app
-cd ${project_dir}
-mkdir build
-cd build
+cd ${project_dir}/build
 qmake -v
 qmake CONFIG-=debug CONFIG+=release ../VNote.pro
 make -j2

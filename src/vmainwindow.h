@@ -64,7 +64,7 @@ public:
     VMainWindow(VSingleInstanceGuard *p_guard, QWidget *p_parent = 0);
 
     // Returns true if the location succeeds.
-    bool locateFile(VFile *p_file);
+    bool locateFile(VFile *p_file, bool p_focus = true, bool p_show = true);
 
     // Returns true if the location succeeds.
     bool locateDirectory(VDirectory *p_directory);
@@ -212,6 +212,8 @@ private slots:
 
     void splitFileListOut(bool p_enabled);
 
+    void collectUserStat() const;
+
 protected:
     void closeEvent(QCloseEvent *event) Q_DECL_OVERRIDE;
 
@@ -258,7 +260,11 @@ private:
     void initCodeBlockStyleMenu(QMenu *p_menu);
 
     void initConverterMenu(QMenu *p_menu);
+
     void initMarkdownitOptionMenu(QMenu *p_menu);
+
+    void initMarkdownExtensionMenu(QMenu *p_menu);
+
     void initEditorBackgroundMenu(QMenu *menu);
 
     // Init the Line Number submenu in Edit menu.
@@ -325,6 +331,10 @@ private:
 
     void updateFontOfAllTabs();
 
+    void promptForVNoteRestart();
+
+    void checkIfNeedToShowWelcomePage();
+
     // Captain mode functions.
 
     // Popup the attachment list if it is enabled.
@@ -333,6 +343,8 @@ private:
     static bool locateCurrentFileByCaptain(void *p_target, void *p_data);
 
     static bool toggleExpandModeByCaptain(void *p_target, void *p_data);
+
+    static bool currentNoteInfoByCaptain(void *p_target, void *p_data);
 
     static bool discardAndReadByCaptain(void *p_target, void *p_data);
 
@@ -499,6 +511,9 @@ private:
     VExplorer *m_explorer;
 
     VTagExplorer *m_tagExplorer;
+
+    // Whether sync note list to current tab.
+    bool m_syncNoteListToCurrentTab;
 
     // Interval of the shared memory timer in ms.
     static const int c_sharedMemTimerInterval;
